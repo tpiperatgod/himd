@@ -2,27 +2,50 @@
 
 himd = hi.md, a voice-first `/hi` companion for Claude Code.
 
-himd is distributed as:
+Type `/himd:hi`, speak naturally, and himd will capture your voice, analyze both your words and vocal signals, generate a warm reply, and speak it aloud.
 
-- **a Claude Code plugin** in `plugins/himd/` — the `/hi` command
-- **a local MCP server package** in `packages/voice-bridge/` — audio capture, understanding, and playback
+Instead of `speech → text → response`, himd moves closer to `speech → understanding (content + state) → interaction`.
 
-## Quick links
+## Install
 
-- **End users:** start with [`plugins/himd/README.md`](plugins/himd/README.md) for install and usage
-- **MCP setup:** see [`packages/voice-bridge/README.md`](packages/voice-bridge/README.md) for the voice-bridge server
-- **Contributors:** `pnpm install && pnpm run check`
+> Requires **macOS** and **ffmpeg** (`brew install ffmpeg`).
 
-## What it does
+**Step 1 — Add the marketplace and install the plugin:**
 
-Type `/hi`, speak naturally, and himd will:
+```bash
+/plugin marketplace add tpiperatgod/himd
+/plugin install himd@himd
+```
 
-1. Capture your voice from the microphone
-2. Analyze both your words and vocal signals (energy, pace, pauses, emotion, tone)
-3. Generate a warm, context-aware Chinese reply
-4. Speak the reply aloud
+**Step 2 — Configure API keys:**
 
-Instead of `speech -> text -> response`, himd moves closer to `speech -> understanding (content + state) -> interaction`.
+```bash
+export DASHSCOPE_API_KEY="your-key"     # Required — Qwen Omni audio emotion/intent analysis
+export ZHIPU_API_KEY="your-key"         # Required — GLM-TTS speech playback
+```
+
+Get your keys: [DashScope](https://dashscope.console.aliyun.com/apiKey) · [Zhipu AI](https://open.bigmodel.cn/usercenter/apikeys)
+
+Add these to your shell profile (`~/.zshrc`) to persist them.
+
+**Step 3 — Install and register the voice-bridge MCP server:**
+
+```bash
+npm install -g @himd/voice-bridge
+claude mcp add --transport stdio -e DASHSCOPE_API_KEY=$DASHSCOPE_API_KEY -e ZHIPU_API_KEY=$ZHIPU_API_KEY voice-bridge -- himd-voice-bridge
+```
+
+Or without global install:
+
+```bash
+claude mcp add --transport stdio -e DASHSCOPE_API_KEY=$DASHSCOPE_API_KEY -e ZHIPU_API_KEY=$ZHIPU_API_KEY voice-bridge -- npx -y @himd/voice-bridge
+```
+
+**Step 4 — Use it:**
+
+```
+/himd:hi
+```
 
 ## Audio providers
 
@@ -31,34 +54,22 @@ Instead of `speech -> text -> response`, himd moves closer to `speech -> underst
 | Qwen Omni | Transcript + emotion + intent + tone + summary | `qwen-omni` |
 | GLM-ASR | Transcript only | `glm-asr` |
 
-Automatic fallback: `qwen-omni` (primary) -> `glm-asr` (fallback). Disable with `HIMD_FALLBACK_PROVIDER=none`.
+Automatic fallback: `qwen-omni` → `glm-asr`. Disable with `HIMD_FALLBACK_PROVIDER=none`.
 
-## Configuration
+## Contributing
 
-See [packages/voice-bridge/README.md](packages/voice-bridge/README.md) for environment variable reference.
-
-## Project structure
-
-```text
-plugins/himd/                     # Claude Code plugin
-  .claude-plugin/plugin.json      # plugin manifest
-  commands/hi.md                  # /hi command
-packages/voice-bridge/            # MCP server (npm package)
-  bin/himd-voice-bridge.js        # CLI entry
-  index.js                        # MCP tool definitions
-  capture.js                      # microphone capture with auto-stop
-  analyze.js                      # acoustic analysis + audio_turn builder
-  tts.js                          # speech synthesis and playback
-  providers/                      # audio understanding providers
-  prompts/                        # model prompt templates
-scripts/                          # validation and sync scripts
+```bash
+git clone git@github.com:tpiperatgod/himd.git
+cd himd
+pnpm install && pnpm run check
 ```
+
+See [`packages/voice-bridge/README.md`](packages/voice-bridge/README.md) for MCP server details.
 
 ## Limitations
 
-- macOS only (uses `ffmpeg` for capture, `afplay` for playback)
-- Audio file size capped at 25MB, duration at 30 seconds
-- Only `.wav` and `.mp3` formats supported
+- macOS only (`ffmpeg` for capture, `afplay` for playback)
+- Audio: max 25 MB, max 30s, `.wav` and `.mp3` only
 
 ## License
 
