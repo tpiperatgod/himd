@@ -202,15 +202,16 @@ server.tool(
 
 server.tool(
   "speech_say",
-  "Convert text to speech using GLM-TTS and play it. Use this after generating a reply to speak it aloud.",
+  "Convert text to speech using Qwen TTS and play it. Use this after generating a reply to speak it aloud.",
   {
-    text: z.string().describe("Text to speak (required, max 1024 chars)"),
+    text: z.string().describe("Text to speak (required, max 600 chars)"),
     voice: z.string().optional().describe("Optional Qwen TTS voice name."),
-    speed: z.number().optional().describe("Speech speed, range [0.5, 2.0]. Defaults to profile or 1.0."),
+    instructions: z.string().optional().describe("Optional natural-language speaking instructions."),
+    optimize_instructions: z.boolean().optional().describe("Whether DashScope should optimize the speaking instructions."),
   },
-  async ({ text, voice, speed }) => {
+  async ({ text, voice, instructions, optimize_instructions }) => {
     try {
-      const result = await synthesize(text, { voice, speed });
+      const result = await synthesize(text, { voice, instructions, optimize_instructions });
       const played = playAudio(result.audioFile);
       markSpeechTurn();
 
@@ -220,8 +221,10 @@ server.tool(
           text: JSON.stringify({
             spoken: played,
             audio_file: result.audioFile,
+            model: result.model,
             voice: result.voice,
-            speed: result.speed,
+            instructions: result.instructions,
+            optimize_instructions: result.optimizeInstructions,
             text_length: result.textLength,
           }),
         }],
@@ -240,11 +243,12 @@ server.tool(
   "Set or update the default voice profile for TTS output.",
   {
     voice: z.string().optional().describe("Optional Qwen TTS voice name."),
-    speed: z.number().optional().describe("Speech speed [0.5, 2.0]"),
+    instructions: z.string().optional().describe("Optional natural-language speaking instructions."),
+    optimize_instructions: z.boolean().optional().describe("Whether DashScope should optimize the speaking instructions."),
   },
-  async ({ voice, speed }) => {
+  async ({ voice, instructions, optimize_instructions }) => {
     try {
-      const profile = writeProfile({ voice, speed });
+      const profile = writeProfile({ voice, instructions, optimize_instructions });
       return {
         content: [{
           type: "text",
