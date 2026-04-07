@@ -17,14 +17,15 @@ Instead of `speech → text → response`, himd moves closer to `speech → unde
 /plugin install himd@himd
 ```
 
-**Step 2 — Configure API keys:**
+**Step 2 — Configure API key and models:**
 
 ```bash
-export DASHSCOPE_API_KEY="your-key"     # Required — Qwen Omni audio emotion/intent analysis
-export ZHIPU_API_KEY="your-key"         # Required — GLM-TTS speech playback
+export DASHSCOPE_API_KEY="your-key"
+export AUDIO_MODEL="qwen3-omni-flash"
+export TTS_MODEL="qwen3-tts-instruct-flash"
 ```
 
-Get your keys: [DashScope](https://dashscope.console.aliyun.com/apiKey) · [Zhipu AI](https://open.bigmodel.cn/usercenter/apikeys)
+Get your key: [DashScope](https://dashscope.console.aliyun.com/apiKey)
 
 Add these to your shell profile (`~/.zshrc`) to persist them.
 
@@ -32,13 +33,13 @@ Add these to your shell profile (`~/.zshrc`) to persist them.
 
 ```bash
 npm install -g @himd/voice-bridge
-claude mcp add --transport stdio -e DASHSCOPE_API_KEY=$DASHSCOPE_API_KEY -e ZHIPU_API_KEY=$ZHIPU_API_KEY voice-bridge -- himd-voice-bridge
+claude mcp add --transport stdio -e DASHSCOPE_API_KEY=$DASHSCOPE_API_KEY voice-bridge -- himd-voice-bridge
 ```
 
 Or without global install:
 
 ```bash
-claude mcp add --transport stdio -e DASHSCOPE_API_KEY=$DASHSCOPE_API_KEY -e ZHIPU_API_KEY=$ZHIPU_API_KEY voice-bridge -- npx -y @himd/voice-bridge
+claude mcp add --transport stdio -e DASHSCOPE_API_KEY=$DASHSCOPE_API_KEY voice-bridge -- npx -y @himd/voice-bridge
 ```
 
 **Step 4 — Use it:**
@@ -47,14 +48,9 @@ claude mcp add --transport stdio -e DASHSCOPE_API_KEY=$DASHSCOPE_API_KEY -e ZHIP
 /himd:hi
 ```
 
-## Audio providers
+## Audio understanding
 
-| Provider | Capabilities | Config name |
-|----------|-------------|-------------|
-| Qwen Omni | Transcript + emotion + intent + tone + summary | `qwen-omni` |
-| GLM-ASR | Transcript only | `glm-asr` |
-
-Automatic fallback: `qwen-omni` → `glm-asr`. Disable with `HIMD_FALLBACK_PROVIDER=none`.
+Audio understanding uses Qwen Omni via DashScope, providing transcript + emotion + intent + tone + summary from a single API.
 
 ## Contributing
 

@@ -6,9 +6,9 @@ description: "Listen to voice input and respond as a caring companion"
 
 **Preflight check:** If the `voice-bridge` MCP server or its tools (`audio_capture_once`, `audio_analyze`, `speech_say`) are unavailable, stop immediately and tell the user to:
 1. install `@himd/voice-bridge`: `npm install -g @himd/voice-bridge`
-2. register it with `claude mcp add --transport stdio -e ZHIPU_API_KEY=your-zhipu-key voice-bridge -- himd-voice-bridge`
+2. register it with `claude mcp add --transport stdio -e DASHSCOPE_API_KEY=your-dashscope-key voice-bridge -- himd-voice-bridge`
 3. verify the server is available in Claude Code with `/mcp` or `claude mcp list`
-4. set `ZHIPU_API_KEY` for spoken replies and optionally `DASHSCOPE_API_KEY` for Qwen Omni
+4. set `DASHSCOPE_API_KEY` for both audio understanding and spoken replies
 
 Do not continue without the MCP tools.
 
@@ -52,14 +52,14 @@ You are now acting as a caring voice companion. Follow these steps exactly:
      - `non_verbal_signals`: detected non-verbal cues (e.g., ["sigh", "laughter"])
      - `language`: detected language
      - `confidence`: overall understanding confidence (0-1)
-9. Respond with exactly ONE short, natural Chinese sentence. Your response MUST be influenced by the analysis:
+9. Respond with exactly ONE short, natural sentence in the user's detected language (or Chinese if undetected). Your response MUST be influenced by the analysis:
    - If `energy` is low + `speech_rate` is slow: respond gently and warmly, as if the person seems tired or down
    - If `energy` is high + `speech_rate` is fast: respond with more energy and lightness
    - If `pause_pattern` is long: the person may be hesitant; be patient and encouraging
    - If `pause_pattern` is short: the person is flowing; keep pace with them
    - If `audio_understanding` is present, use its `emotion`, `intent`, and `tone` to refine your response
    - Always blend the transcript meaning with the vocal quality signals
-10. Immediately after your reply, call the `speech_say` tool from the `voice-bridge` server, passing your reply text as the `text` parameter. This will speak your reply aloud.
+10. Immediately after your reply, call the `speech_say` tool from the `voice-bridge` server, passing your reply text as the `text` parameter. This will speak your reply aloud via Qwen TTS.
 
 **Error handling:**
 - Missing MCP tools -> show the preflight install/register guidance above

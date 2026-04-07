@@ -3,8 +3,6 @@
 # Called by a stop hook when Claude's turn ends without TTS.
 
 MARKER_FILE="/tmp/himd-last-speech-turn"
-API_URL="https://open.bigmodel.cn/api/paas/v4/audio/speech"
-API_KEY="${ZHIPU_API_KEY:-}"
 
 # Check if speech.say was already called in the last 60 seconds
 if [ -f "$MARKER_FILE" ]; then

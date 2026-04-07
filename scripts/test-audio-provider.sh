@@ -1,25 +1,22 @@
 #!/usr/bin/env bash
-# test-audio-provider.sh — Manual verification script for audio providers
+# test-audio-provider.sh — Manual verification script for Qwen Omni audio understanding
 #
 # Usage:
-#   ./scripts/test-audio-provider.sh <audio-file> [provider]
+#   ./scripts/test-audio-provider.sh <audio-file>
 #
 # Examples:
 #   ./scripts/test-audio-provider.sh recording.wav
-#   ./scripts/test-audio-provider.sh recording.mp3 glm-asr
-#   ./scripts/test-audio-provider.sh recording.wav qwen-omni
+#   ./scripts/test-audio-provider.sh recording.mp3
 #
 # Prerequisites:
-#   - DASHSCOPE_API_KEY set (for qwen-omni)
-#   - ZHIPU_API_KEY set (for glm-asr)
+#   - DASHSCOPE_API_KEY set
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-FILE="${1:?Usage: $0 <audio-file> [provider]}"
-PROVIDER="${2:-qwen-omni}"
+FILE="${1:?Usage: $0 <audio-file>}"
 
 if [ ! -f "$FILE" ]; then
   echo "Error: File not found: $FILE"
@@ -28,33 +25,23 @@ fi
 
 echo "=== Audio Provider Test ==="
 echo "File: $FILE"
-echo "Provider: $PROVIDER"
 echo ""
 
 node -e "
 const path = require('path');
 
-// Set provider before requiring
-process.env.HIMD_AUDIO_PROVIDER = '$PROVIDER';
-
 const filePath = path.resolve('$FILE');
 
-// Test 1: Provider factory
-console.log('--- Test 1: Provider factory ---');
-const { getAudioProvider } = require('${PROJECT_DIR}/packages/voice-bridge/providers/audio-provider.js');
-const provider = getAudioProvider();
-console.log('Provider:', provider.name);
-
-// Test 2: Base64 conversion
-console.log('\n--- Test 2: Base64 conversion ---');
+// Test 1: Base64 conversion
+console.log('--- Test 1: Base64 conversion ---');
 const { fileToBase64, buildAudioDataUrl } = require('${PROJECT_DIR}/packages/voice-bridge/audio-utils.js');
 const { base64, ext, mimeType } = fileToBase64(filePath);
 console.log('Extension:', ext, '| MIME:', mimeType, '| Base64 length:', base64.length);
 const dataUrl = buildAudioDataUrl(filePath);
 console.log('Data URL prefix:', dataUrl.slice(0, 50) + '...');
 
-// Test 3: JSON parsing
-console.log('\n--- Test 3: JSON parsing ---');
+// Test 2: JSON parsing
+console.log('\n--- Test 2: JSON parsing ---');
 const { parseJsonResponse } = require('${PROJECT_DIR}/packages/voice-bridge/audio-utils.js');
 const testCases = [
   '{\"transcript\":\"hello\",\"intent\":\"greeting\"}',
@@ -68,8 +55,11 @@ for (const tc of testCases) {
   console.log('Parsed:', parsed ? 'OK (' + Object.keys(parsed).join(',') + ')' : 'null');
 }
 
-// Test 4: Actual provider call
-console.log('\n--- Test 4: Provider.understand() ---');
+// Test 3: Qwen Omni provider call
+console.log('\n--- Test 3: Provider.understand() ---');
+const provider = require('${PROJECT_DIR}/packages/voice-bridge/providers/qwen-omni-provider.js');
+console.log('Provider:', provider.name);
+
 provider.understand(filePath)
   .then(result => {
     console.log('Transcript:', result.transcript || '(empty)');

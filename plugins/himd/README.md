@@ -7,7 +7,7 @@ himd = hi.md, a voice-first `/hi` companion for Claude Code.
 Type `/hi`, speak naturally, and himd will:
 1. Capture your voice from the microphone
 2. Analyze both your words and vocal signals (energy, pace, pauses)
-3. Generate a warm, context-aware Chinese reply
+3. Generate a warm, context-aware reply
 4. Speak the reply aloud
 
 ## Prerequisites
@@ -26,29 +26,24 @@ himd requires the `voice-bridge` MCP server for audio capture, analysis, and pla
 
 ```bash
 npm install -g @himd/voice-bridge
-claude mcp add --transport stdio -e ZHIPU_API_KEY=your-zhipu-key voice-bridge -- himd-voice-bridge
+claude mcp add --transport stdio -e DASHSCOPE_API_KEY=your-dashscope-key voice-bridge -- himd-voice-bridge
 ```
 
 Or use it directly without installing:
 
 ```bash
-claude mcp add --transport stdio -e ZHIPU_API_KEY=your-zhipu-key voice-bridge -- npx -y @himd/voice-bridge
+claude mcp add --transport stdio -e DASHSCOPE_API_KEY=your-dashscope-key voice-bridge -- npx -y @himd/voice-bridge
 ```
 
-## Configure API keys
+## Configure API key
 
-For the full `/hi` experience:
-
-- `ZHIPU_API_KEY` is required for spoken replies
-- `DASHSCOPE_API_KEY` is optional but recommended for Qwen Omni enriched understanding
+Only one API key is needed for the full `/hi` experience:
 
 ```bash
-export ZHIPU_API_KEY="your-key"         # Required for speech synthesis
-export DASHSCOPE_API_KEY="your-key"     # Optional, enables Qwen Omni
+export DASHSCOPE_API_KEY="your-key"     # Required for audio understanding and speech synthesis
 ```
 
-If you only configure `ZHIPU_API_KEY`, himd can still work using GLM-ASR transcription plus GLM-TTS.
-Add these to your shell profile (`~/.zshrc`) to persist them.
+Add this to your shell profile (`~/.zshrc`) to persist it.
 
 ## Verify setup
 
@@ -77,8 +72,7 @@ claude --plugin-dir ./plugins/himd
 
 ## Troubleshooting
 
-- **"voice-bridge tools unavailable"** — run `claude mcp add --transport stdio -e ZHIPU_API_KEY=your-zhipu-key voice-bridge -- himd-voice-bridge`
+- **"voice-bridge tools unavailable"** — run `claude mcp add --transport stdio -e DASHSCOPE_API_KEY=your-dashscope-key voice-bridge -- himd-voice-bridge`
 - **"Required command not found: ffmpeg"** — run `brew install ffmpeg`
-- **Missing `ZHIPU_API_KEY`** — set it in your environment; spoken replies require it
-- **Missing `DASHSCOPE_API_KEY`** — set it to enable Qwen Omni, or use GLM-ASR only
+- **Missing `DASHSCOPE_API_KEY`** — set it in your environment; audio understanding and spoken replies require it
 - **Plugin not loading** — verify `plugins/himd/.claude-plugin/plugin.json` exists and is valid JSON
