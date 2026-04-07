@@ -1,0 +1,8 @@
+.claude
+.agents
+.mcp.json
+node_modules/
+docs/superpowers/
+.voice-bridge/
+.playwright-mcp/
+.serena/

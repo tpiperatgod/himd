@@ -1,0 +1,34 @@
+{
+  "name": "@himd/voice-bridge",
+  "version": "0.6.0",
+  "description": "Local stdio MCP server for himd voice capture, audio understanding, and TTS",
+  "license": "MIT",
+  "main": "index.js",
+  "bin": {
+    "himd-voice-bridge": "bin/himd-voice-bridge.js"
+  },
+  "files": [
+    "bin/**/*",
+    "index.js",
+    "capture.js",
+    "analyze.js",
+    "audio-utils.js",
+    "tts.js",
+    "providers/**/*",
+    "prompts/**/*",
+    "system-deps.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "node bin/himd-voice-bridge.js --help >/dev/null && node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.23.0"
+  }
+}

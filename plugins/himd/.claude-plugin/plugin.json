@@ -1,0 +1,11 @@
+{
+  "name": "himd",
+  "description": "himd = hi.md, a voice-first /hi companion for Claude Code.",
+  "version": "0.1.0",
+  "author": {
+    "name": "tpiperatgod"
+  },
+  "homepage": "https://github.com/tpiperatgod/himd",
+  "repository": "https://github.com/tpiperatgod/himd",
+  "license": "MIT"
+}
