@@ -6,49 +6,21 @@ const { z } = require("zod");
 const { analyzeAudio, buildAudioTurn } = require("./analyze.js");
 const { synthesize, playAudio, markSpeechTurn, readProfile, writeProfile, VALID_VOICES } = require("./tts.js");
 const { captureOnce, getControlDir } = require("./capture.js");
-const { getAudioProvider, getFallbackProvider } = require("./providers/audio-provider.js");
+const qwenOmni = require("./providers/qwen-omni-provider.js");
 
 const server = new McpServer({
   name: "voice-bridge",
   version: "0.5.0",
 });
 
-// --- Audio understanding via provider factory ---
+// --- Audio understanding via Qwen Omni ---
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 MB
 const SUPPORTED_EXTENSIONS = [".wav", ".mp3"];
 
-/**
- * Run audio understanding with automatic fallback.
- * Primary provider → fallback provider → transcript-only error result.
- */
-async function understandWithFallback(filePath) {
-  const provider = getAudioProvider();
-
-  try {
-    return await provider.understand(filePath);
-  } catch (primaryError) {
-    console.error(`[voice-bridge] Primary provider (${provider.name}) failed: ${primaryError.message}`);
-
-    const fallback = getFallbackProvider();
-    if (fallback && fallback.name !== provider.name) {
-      try {
-        const result = await fallback.understand(filePath);
-        result.warnings.push(`primary_provider_failed:${provider.name}`);
-        return result;
-      } catch (fallbackError) {
-        console.error(`[voice-bridge] Fallback provider (${fallback.name}) also failed: ${fallbackError.message}`);
-      }
-    }
-
-    // Both failed — throw the original error
-    throw primaryError;
-  }
-}
-
 server.tool(
   "audio_transcribe",
-  "Transcribe a local audio file using GLM-ASR-2512. Returns the transcript text.",
+  "Transcribe a local audio file using Qwen Omni. Returns the transcript text.",
   {
     file_path: z.string().describe("Absolute path to the audio file (.wav or .mp3, max 25MB, max 30 seconds)"),
   },
@@ -83,9 +55,7 @@ server.tool(
     }
 
     try {
-      // Use glm-asr provider directly for plain transcription
-      const glmAsr = require("./providers/glm-asr-provider.js");
-      const result = await glmAsr.understand(file_path);
+      const result = await qwenOmni.understand(file_path);
       return {
         content: [{
           type: "text",
@@ -145,8 +115,8 @@ server.tool(
     }
 
     try {
-      // Step 1: Audio understanding via provider (with fallback)
-      const providerResult = await understandWithFallback(file_path);
+      // Step 1: Audio understanding via Qwen Omni
+      const providerResult = await qwenOmni.understand(file_path);
 
       // Step 2: Local acoustic analysis (supplementary)
       const rawAnalysis = analyzeAudio(file_path, providerResult.transcript);

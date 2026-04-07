@@ -1,13 +1,13 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 
-function loadFactory() {
-  delete require.cache[require.resolve("../providers/audio-provider.js")];
-  return require("../providers/audio-provider.js");
+function loadProvider() {
+  delete require.cache[require.resolve("../providers/qwen-omni-provider.js")];
+  return require("../providers/qwen-omni-provider.js");
 }
 
 function withEnv(nextEnv, fn) {
-  const keys = ["HIMD_AUDIO_PROVIDER", "HIMD_FALLBACK_PROVIDER"];
+  const keys = ["AUDIO_MODEL"];
   const prev = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
   for (const key of keys) delete process.env[key];
   Object.assign(process.env, nextEnv);
@@ -21,23 +21,16 @@ function withEnv(nextEnv, fn) {
   }
 }
 
-test("HIMD_AUDIO_PROVIDER selects provider", () => {
-  withEnv({ HIMD_AUDIO_PROVIDER: "glm-asr" }, () => {
-    const { getAudioProvider } = loadFactory();
-    assert.equal(getAudioProvider().name, "glm-asr");
-  });
-});
-
-test("defaults to qwen-omni when unset", () => {
+test("AUDIO_MODEL defaults to qwen3-omni-flash", () => {
   withEnv({}, () => {
-    const { getAudioProvider } = loadFactory();
-    assert.equal(getAudioProvider().name, "qwen-omni");
+    const { getAudioModel } = loadProvider();
+    assert.equal(getAudioModel(), "qwen3-omni-flash");
   });
 });
 
-test("HIMD_FALLBACK_PROVIDER can disable fallback", () => {
-  withEnv({ HIMD_FALLBACK_PROVIDER: "none" }, () => {
-    const { getFallbackProvider } = loadFactory();
-    assert.equal(getFallbackProvider(), null);
+test("AUDIO_MODEL override is respected", () => {
+  withEnv({ AUDIO_MODEL: "qwen3-omni-flash" }, () => {
+    const { getAudioModel } = loadProvider();
+    assert.equal(getAudioModel(), "qwen3-omni-flash");
   });
 });

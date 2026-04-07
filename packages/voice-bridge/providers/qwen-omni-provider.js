@@ -13,7 +13,6 @@
 
 const fs = require("fs");
 const path = require("path");
-const { createEmptyResult } = require("./audio-provider");
 const { fileToBase64 } = require("../audio-utils");
 const { parseJsonResponse } = require("../audio-utils");
 const { SYSTEM_PROMPT, USER_PROMPT } = require("../prompts/qwen-omni-prompt");
@@ -24,9 +23,40 @@ const DASHSCOPE_API_KEY = process.env.DASHSCOPE_API_KEY;
 const DASHSCOPE_BASE_URL =
   process.env.DASHSCOPE_BASE_URL ||
   "https://dashscope.aliyuncs.com/compatible-mode/v1";
-const QWEN_OMNI_MODEL = process.env.QWEN_OMNI_MODEL || "qwen3-omni-flash";
 const QWEN_OMNI_TIMEOUT_MS = parseInt(process.env.QWEN_OMNI_TIMEOUT_MS || "30000", 10);
 const QWEN_OMNI_DEBUG = process.env.QWEN_OMNI_DEBUG === "true";
+
+/**
+ * Get the audio model name from AUDIO_MODEL env var.
+ * @returns {string}
+ */
+function getAudioModel() {
+  return process.env.AUDIO_MODEL || "qwen3-omni-flash";
+}
+
+/**
+ * Create an empty result with default values.
+ * @param {string} provider
+ * @param {string} model
+ * @returns {object}
+ */
+function createEmptyResult(provider, model) {
+  return {
+    transcript: "",
+    provider,
+    model,
+    summary: null,
+    intent: null,
+    emotion: null,
+    tone: null,
+    key_points: null,
+    non_verbal_signals: null,
+    language: null,
+    confidence: 0.0,
+    raw_text: null,
+    warnings: [],
+  };
+}
 
 /**
  * Debug logger — only active when QWEN_OMNI_DEBUG=true.
@@ -59,10 +89,11 @@ function classifyHttpError(status, body) {
  * @returns {Promise<string>} Full text content from streaming response
  */
 async function makeRequest(audioDataUrl, audioFormat, timeoutMs) {
+  const model = getAudioModel();
   const url = `${DASHSCOPE_BASE_URL}/chat/completions`;
 
   const body = {
-    model: QWEN_OMNI_MODEL,
+    model,
     stream: true,
     stream_options: { include_usage: true },
     modalities: ["text"],
@@ -84,7 +115,7 @@ async function makeRequest(audioDataUrl, audioFormat, timeoutMs) {
     ],
   };
 
-  debug(`POST ${url} model=${QWEN_OMNI_MODEL} format=${audioFormat}`);
+  debug(`POST ${url} model=${model} format=${audioFormat}`);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -177,7 +208,8 @@ async function makeRequest(audioDataUrl, audioFormat, timeoutMs) {
  * @returns {object} Normalized AudioUnderstandingResult
  */
 function normalizeResult(parsed, rawText) {
-  const result = createEmptyResult(name, QWEN_OMNI_MODEL);
+  const model = getAudioModel();
+  const result = createEmptyResult(name, model);
 
   // Required
   result.transcript = typeof parsed.transcript === "string" ? parsed.transcript : "";
@@ -224,12 +256,14 @@ function normalizeResult(parsed, rawText) {
  */
 async function understand(filePath) {
   if (!DASHSCOPE_API_KEY) {
-    throw new Error("DASHSCOPE_API_KEY environment variable is not set. Set it or switch HIMD_AUDIO_PROVIDER to glm-asr.");
+    throw new Error("DASHSCOPE_API_KEY environment variable is not set.");
   }
 
   if (!fs.existsSync(filePath)) {
     throw new Error(`Audio file not found: ${filePath}`);
   }
+
+  const model = getAudioModel();
 
   // Read and encode audio
   const { base64, ext } = fileToBase64(filePath);
@@ -259,7 +293,7 @@ async function understand(filePath) {
 
   // Empty response
   if (!rawText || rawText.trim().length === 0) {
-    const result = createEmptyResult(name, QWEN_OMNI_MODEL);
+    const result = createEmptyResult(name, model);
     result.warnings.push("empty_response");
     return result;
   }
@@ -273,11 +307,11 @@ async function understand(filePath) {
 
   // JSON parse failed — use raw text as transcript
   debug(`JSON parse failed, using raw text as transcript`);
-  const result = createEmptyResult(name, QWEN_OMNI_MODEL);
+  const result = createEmptyResult(name, model);
   result.transcript = rawText.trim();
   result.raw_text = rawText;
   result.warnings.push("json_parse_failed");
   return result;
 }
 
-module.exports = { name, understand };
+module.exports = { name, understand, getAudioModel, createEmptyResult };
