@@ -1,0 +1,22 @@
+[package]
+name = "himd-cli"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+description = "CLI entrypoint for the himd MCP voice companion"
+
+[[bin]]
+name = "himd"
+path = "src/main.rs"
+
+[dependencies]
+himd-core = { workspace = true }
+himd-audio = { workspace = true }
+himd-mcp = { workspace = true }
+clap = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

@@ -1,0 +1,14 @@
+[package]
+name = "himd-mcp"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+description = "MCP server and tool registrations for himd"
+
+[dependencies]
+himd-core = { workspace = true }
+himd-audio = { workspace = true }
+rmcp = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }

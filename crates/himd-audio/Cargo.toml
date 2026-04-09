@@ -1,0 +1,17 @@
+[package]
+name = "himd-audio"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+description = "Native audio capture and playback for himd"
+
+[dependencies]
+cpal = "0.16"
+himd-core = { workspace = true }
+rodio = "0.20"
+serde = { workspace = true }
+tokio = { workspace = true }
+thiserror = "2"
+
+[dev-dependencies]
+tempfile = "3"
