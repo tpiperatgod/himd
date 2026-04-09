@@ -1,9 +1,0 @@
-{
-  "name": "@himd/plugin-himd",
-  "private": true,
-  "version": "0.1.0",
-  "description": "Workspace package for the himd Claude Code plugin",
-  "scripts": {
-    "check": "node ../../scripts/validate-plugin.mjs"
-  }
-}
