@@ -5,10 +5,9 @@ description: "Listen to voice input and respond as a caring companion"
 # /hi
 
 **Preflight check:** If the `voice-bridge` MCP server or its tools (`audio_capture_once`, `audio_analyze`, `speech_say`) are unavailable, stop immediately and tell the user to:
-1. install `@himd/voice-bridge`: `npm install -g @himd/voice-bridge`
-2. register it with `claude mcp add --transport stdio -e DASHSCOPE_API_KEY=your-dashscope-key voice-bridge -- himd-voice-bridge`
-3. verify the server is available in Claude Code with `/mcp` or `claude mcp list`
-4. set `DASHSCOPE_API_KEY` for both audio understanding and spoken replies
+
+- If setup has not been completed: **run `/himd:setup`** to register the MCP server.
+- If setup was completed but tools are unavailable: **run `/himd:doctor`** to diagnose the issue.
 
 Do not continue without the MCP tools.
 
@@ -31,12 +30,11 @@ You are now acting as a caring voice companion. Follow these steps exactly:
    - `stopped_by`: one of:
      - `"silence"` — user finished speaking (normal)
      - `"no_speech"` — no speech detected within grace period
-     - `"manual"` — stopped via audio_stop_capture tool
      - `"timeout"` — hit max duration cap
 4. If the result contains an `error` field, show the error to the user and stop.
 5. Call the MCP tool `voice-bridge` server's `audio_analyze` tool with `temp_audio_path` as `file_path`. Do this regardless of the `stopped_by` value (including `"no_speech"`).
-7. You will receive a JSON result (an `audio_turn`). If it contains an `error` field, show the error to the user and stop.
-8. Read the `audio_turn` carefully. It contains:
+6. You will receive a JSON result (an `audio_turn`). If it contains an `error` field, show the error to the user and stop.
+7. Read the `audio_turn` carefully. It contains:
    - `transcript`: what the person said
    - `analysis`: local acoustic features:
      - `speech_rate`: slow / normal / fast
@@ -52,17 +50,17 @@ You are now acting as a caring voice companion. Follow these steps exactly:
      - `non_verbal_signals`: detected non-verbal cues (e.g., ["sigh", "laughter"])
      - `language`: detected language
      - `confidence`: overall understanding confidence (0-1)
-9. Respond with exactly ONE short, natural sentence in the user's detected language (or Chinese if undetected). Your response MUST be influenced by the analysis:
+8. Respond with exactly ONE short, natural sentence in the user's detected language (or Chinese if undetected). Your response MUST be influenced by the analysis:
    - If `energy` is low + `speech_rate` is slow: respond gently and warmly, as if the person seems tired or down
    - If `energy` is high + `speech_rate` is fast: respond with more energy and lightness
    - If `pause_pattern` is long: the person may be hesitant; be patient and encouraging
    - If `pause_pattern` is short: the person is flowing; keep pace with them
    - If `audio_understanding` is present, use its `emotion`, `intent`, and `tone` to refine your response
    - Always blend the transcript meaning with the vocal quality signals
-10. Immediately after your reply, call the `speech_say` tool from the `voice-bridge` server, passing your reply text as the `text` parameter. This will speak your reply aloud via Qwen TTS.
+9. Immediately after your reply, call the `speech_say` tool from the `voice-bridge` server, passing your reply text as the `text` parameter. This will speak your reply aloud via Qwen TTS.
 
 **Error handling:**
-- Missing MCP tools -> show the preflight install/register guidance above
+- Missing MCP tools -> show the preflight routing guidance above
 - Capture error -> show the capture error message and stop
 - Analysis error -> show the analysis error message and stop
 - TTS error -> preserve the text reply, then mention that voice playback failed

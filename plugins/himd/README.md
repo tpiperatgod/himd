@@ -1,6 +1,6 @@
-# himd Plugin
+# hi.md Plugin
 
-himd = hi.md, a voice-first `/hi` companion for Claude Code.
+hi.md is a voice-first `/hi` companion for Claude Code.
 
 ## What it does
 
@@ -12,46 +12,117 @@ Type `/hi`, speak naturally, and himd will:
 
 ## Prerequisites
 
-- **macOS** with Command Line Tools installed
-- **ffmpeg** — install with `brew install ffmpeg`
+- **macOS** with Command Line Tools installed, **or Windows** with Visual Studio Build Tools
 - **Claude Code** CLI
+- **Rust** 1.88+ (for building from source)
 
-## Install from marketplace
-
-> Coming soon — the plugin will be available from the Claude Code plugin marketplace.
-
-## Install and register `@himd/voice-bridge`
-
-himd requires the `voice-bridge` MCP server for audio capture, analysis, and playback:
+## Install from source
 
 ```bash
-npm install -g @himd/voice-bridge
-claude mcp add --transport stdio -e DASHSCOPE_API_KEY=your-dashscope-key voice-bridge -- himd-voice-bridge
+git clone https://github.com/tpiperatgod/hi.md.git
+cd himd
+cargo build --release
 ```
 
-Or use it directly without installing:
+- macOS: binary at `target/release/himd`
+- Windows: binary at `target\release\himd.exe`
+
+## Install from release artifact
+
+If a binary has been published for your platform, download it from [GitHub Releases](https://github.com/tpiperatgod/hi.md/releases). Release artifacts are published manually and may lag the current branch state:
+
+**macOS:**
+- Apple Silicon Mac → `himd-darwin-arm64.tar.gz`
+- Intel Mac → `himd-darwin-x64.tar.gz`
 
 ```bash
-claude mcp add --transport stdio -e DASHSCOPE_API_KEY=your-dashscope-key voice-bridge -- npx -y @himd/voice-bridge
+tar xzf himd-darwin-*.tar.gz
+chmod +x himd
+# Remove macOS quarantine if needed:
+xattr -d com.apple.quarantine himd
 ```
+
+**Windows:**
+- `himd-windows-x64.zip`
+
+```powershell
+Expand-Archive .\himd-windows-x64.zip -DestinationPath .\himd
+```
+
+## Register the MCP server
+
+The MCP server name is **`voice-bridge`** (unchanged from the Node era).
+
+### Source install (project scope)
+
+**macOS/Linux:**
+```bash
+claude mcp add --scope project --transport stdio -e DASHSCOPE_API_KEY=your-dashscope-key voice-bridge -- $(pwd)/target/release/himd serve-stdio
+```
+
+**Windows:**
+```powershell
+claude mcp add --scope project --transport stdio -e DASHSCOPE_API_KEY=your-dashscope-key voice-bridge -- C:\path\to\himd\target\release\himd.exe serve-stdio
+```
+
+### Release install (user scope)
+
+**macOS/Linux:**
+```bash
+claude mcp add --scope user --transport stdio -e DASHSCOPE_API_KEY=your-dashscope-key voice-bridge -- /path/to/himd serve-stdio
+```
+
+**Windows:**
+```powershell
+claude mcp add --scope user --transport stdio -e DASHSCOPE_API_KEY=your-dashscope-key voice-bridge -- C:\path\to\himd.exe serve-stdio
+```
+
+Or use the guided setup inside Claude Code:
+```
+/himd:setup
+```
+
+### Migrating from legacy Node registration
+
+If you previously registered the Node.js `@himd/voice-bridge` package, remove it and re-register with the Rust binary:
+
+```bash
+# Remove the old registration
+claude mcp remove voice-bridge
+
+# Re-register with the Rust binary (see commands above)
+/himd:setup
+```
+
+The MCP server name remains `voice-bridge` so existing Claude sessions continue to work.
 
 ## Configure API key
 
-Only one API key is needed for the full `/hi` experience:
-
+**macOS/Linux:**
 ```bash
-export DASHSCOPE_API_KEY="your-key"     # Required for audio understanding and speech synthesis
+export DASHSCOPE_API_KEY="your-key"
+# Add to ~/.zshrc to persist
 ```
 
-Add this to your shell profile (`~/.zshrc`) to persist it.
+**Windows (PowerShell):**
+```powershell
+$env:DASHSCOPE_API_KEY = "your-key"
+# Add to $PROFILE to persist
+```
+
+Get your key at [DashScope](https://dashscope.console.aliyun.com/apiKey).
 
 ## Verify setup
 
 ```bash
-claude mcp list  # should show voice-bridge
+himd doctor           # human-readable output
+himd doctor --json    # machine-readable output (used by /himd:doctor)
 ```
 
-Or inside Claude Code, type `/mcp`.
+Or inside Claude Code:
+```
+/himd:doctor
+```
 
 ## Use `/hi`
 
@@ -60,19 +131,29 @@ Or inside Claude Code, type `/mcp`.
 3. Speak when prompted
 4. Listen to the reply
 
-## Local development
+## Plugin commands
 
-To test the plugin from source:
-
-```bash
-git clone git@github.com:tpiperatgod/himd.git
-cd himd
-claude --plugin-dir ./plugins/himd
-```
+| Command | Description |
+|---------|-------------|
+| `/hi` | Start a voice conversation |
+| `/himd:setup` | Guided setup for the MCP server (source or release install) |
+| `/himd:doctor` | Diagnose setup and runtime issues |
 
 ## Troubleshooting
 
-- **"voice-bridge tools unavailable"** — run `claude mcp add --transport stdio -e DASHSCOPE_API_KEY=your-dashscope-key voice-bridge -- himd-voice-bridge`
-- **"Required command not found: ffmpeg"** — run `brew install ffmpeg`
-- **Missing `DASHSCOPE_API_KEY`** — set it in your environment; audio understanding and spoken replies require it
-- **Plugin not loading** — verify `plugins/himd/.claude-plugin/plugin.json` exists and is valid JSON
+- **"voice-bridge tools unavailable"** — run `/himd:setup` to register the MCP server
+- **Missing `DASHSCOPE_API_KEY`** — set it in your shell profile and restart Claude Code
+- **Binary not found** — source: run `cargo build --release`; release: re-download the artifact
+- **Quarantine error on macOS** — run `xattr -d com.apple.quarantine /path/to/himd`
+- **Legacy Node registration** — if `/himd:doctor` shows a registration pointing to `npx @himd/voice-bridge`, remove it and re-register with the Rust binary
+- **Setup seems broken** — run `/himd:doctor` for guided diagnosis
+
+## Local verification
+
+This repository does not maintain GitHub Actions workflows. Verify changes locally before publishing plugin docs or preparing a manual release:
+
+```bash
+cargo test --workspace -- --test-threads=1
+cargo clippy --workspace -- -D warnings
+cargo fmt --all --check
+```
